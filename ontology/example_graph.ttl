@@ -1,0 +1,92 @@
+@prefix os: <http://rmax.ai/ontology/operational-semantics/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+os:applications_maintainer a os:Role ;
+    os:description "Maintains application health and approved remediation workflows." .
+
+os:incident_commander a os:Role ;
+    os:description "Coordinates incident response and approves high-risk remediation." .
+
+os:alice a os:AgentActor ;
+    os:holdsRole os:applications_maintainer .
+
+os:bob a os:HumanActor ;
+    os:holdsRole os:incident_commander .
+
+os:jira_gateway a os:Tool ;
+    os:description "Governed gateway adapter for synthetic Jira writes." .
+
+os:jira_issue_prod_123 a os:JiraResource ;
+    os:externalReference "JIRA:OPS-123" .
+
+os:evidence_incident_record a os:Evidence ;
+    os:externalReference "INC-2026-0042" ;
+    os:description "Incident timeline showing repeated deployment rollback failures." ;
+    os:timestamp "2026-05-27T08:15:00Z"^^xsd:dateTime .
+
+os:evidence_runbook_excerpt a os:Evidence ;
+    os:externalReference "RUNBOOK:DEPLOY-ROLLBACK-02" ;
+    os:description "Approved remediation step to reopen the remediation ticket and attach rollback diagnostics." ;
+    os:timestamp "2026-05-27T08:18:00Z"^^xsd:dateTime .
+
+os:jira_remediation_action a os:WriteAction ;
+    os:actionType "jira_update_issue" ;
+    os:operationClass "propose_write" ;
+    os:riskLevel "high" ;
+    os:performedVia os:jira_gateway .
+
+os:incident_remediation_policy a os:Policy ;
+    os:externalReference "policy://incident-remediation/v1" .
+
+os:jira_remediation_proposal a os:ActionProposal ;
+    os:proposedAction os:jira_remediation_action ;
+    os:targets os:jira_issue_prod_123 ;
+    os:supportedBy os:evidence_incident_record, os:evidence_runbook_excerpt ;
+    os:referencesEvidence os:evidence_incident_record, os:evidence_runbook_excerpt ;
+    os:governedBy os:incident_remediation_policy ;
+    os:hasPolicyDecision os:jira_remediation_decision ;
+    os:payloadHash "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ;
+    os:containsRestrictedData false ;
+    os:timestamp "2026-05-27T08:20:00Z"^^xsd:dateTime .
+
+os:alice os:proposes os:jira_remediation_proposal .
+
+os:jira_remediation_decision a os:PolicyDecision ;
+    os:decisionType "approval_required" ;
+    os:description "High-risk Jira write during an active incident requires incident commander approval." ;
+    os:timestamp "2026-05-27T08:21:00Z"^^xsd:dateTime ;
+    os:requiresApproval os:jira_remediation_approval .
+
+os:jira_remediation_approval a os:Approval ;
+    os:forProposal os:jira_remediation_proposal ;
+    os:approvalStatus "granted" ;
+    os:approvedPayloadHash "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ;
+    os:grantedBy os:bob ;
+    os:authorizes os:jira_remediation_execution ;
+    os:timestamp "2026-05-27T08:25:00Z"^^xsd:dateTime .
+
+os:jira_remediation_execution a os:Execution ;
+    os:forAction os:jira_remediation_action ;
+    os:forProposalExecution os:jira_remediation_proposal ;
+    os:referencesPolicyDecision os:jira_remediation_decision ;
+    os:referencesApproval os:jira_remediation_approval ;
+    os:executionStatus "succeeded" ;
+    os:produces os:jira_remediation_outcome ;
+    os:timestamp "2026-05-27T08:28:00Z"^^xsd:dateTime .
+
+os:alice os:executes os:jira_remediation_execution .
+
+os:jira_remediation_outcome a os:Outcome ;
+    os:outcomeOf os:jira_remediation_execution ;
+    os:outcomeStatus "succeeded" ;
+    os:externalReference "JIRA:OPS-123#comment-7" ;
+    os:description "Rollback diagnostics were attached and the remediation issue was transitioned to in-progress." ;
+    os:timestamp "2026-05-27T08:29:00Z"^^xsd:dateTime .
+
+os:audit_record_001 a os:AuditRecord ;
+    os:eventType "governed_write_execution" ;
+    os:referencesProposal os:jira_remediation_proposal ;
+    os:referencesExecution os:jira_remediation_execution ;
+    os:referencesOutcome os:jira_remediation_outcome ;
+    os:records os:jira_remediation_execution ;
+    os:timestamp "2026-05-27T08:30:00Z"^^xsd:dateTime .
