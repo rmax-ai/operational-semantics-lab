@@ -1,0 +1,184 @@
+@prefix os: <http://rmax.ai/ontology/operational-semantics/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+os: a owl:Ontology ;
+    rdfs:label "Operational Semantics Lab Ontology" ;
+    rdfs:comment "Ontology for governed enterprise-agent proposals, approvals, execution, and audit provenance." .
+
+os:Actor a owl:Class .
+os:AgentActor a owl:Class ; rdfs:subClassOf os:Actor .
+os:HumanActor a owl:Class ; rdfs:subClassOf os:Actor .
+os:Role a owl:Class .
+os:Action a owl:Class .
+os:ReadAction a owl:Class ; rdfs:subClassOf os:Action .
+os:WriteAction a owl:Class ; rdfs:subClassOf os:Action .
+os:Tool a owl:Class .
+os:ActionProposal a owl:Class .
+os:Policy a owl:Class .
+os:PolicyDecision a owl:Class .
+os:Approval a owl:Class .
+os:Evidence a owl:Class .
+os:Execution a owl:Class .
+os:Outcome a owl:Class .
+os:AuditRecord a owl:Class .
+os:SaaSResource a owl:Class .
+os:JiraResource a owl:Class ; rdfs:subClassOf os:SaaSResource .
+os:SlackResource a owl:Class ; rdfs:subClassOf os:SaaSResource .
+os:CRMResource a owl:Class ; rdfs:subClassOf os:SaaSResource .
+
+os:holdsRole a owl:ObjectProperty ;
+    rdfs:domain os:Actor ;
+    rdfs:range os:Role .
+
+os:proposes a owl:ObjectProperty ;
+    rdfs:domain os:Actor ;
+    rdfs:range os:ActionProposal .
+
+os:targets a owl:ObjectProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range os:SaaSResource .
+
+os:performedVia a owl:ObjectProperty ;
+    rdfs:domain os:Action ;
+    rdfs:range os:Tool .
+
+os:supportedBy a owl:ObjectProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range os:Evidence .
+
+os:governedBy a owl:ObjectProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range os:Policy .
+
+os:hasPolicyDecision a owl:ObjectProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range os:PolicyDecision .
+
+os:requiresApproval a owl:ObjectProperty ;
+    rdfs:domain os:PolicyDecision ;
+    rdfs:range os:Approval .
+
+os:grantedBy a owl:ObjectProperty ;
+    rdfs:domain os:Approval ;
+    rdfs:range os:Actor .
+
+os:authorizes a owl:ObjectProperty ;
+    rdfs:domain os:Approval ;
+    rdfs:range os:Execution .
+
+os:executes a owl:ObjectProperty ;
+    rdfs:domain os:Actor ;
+    rdfs:range os:Execution .
+
+os:produces a owl:ObjectProperty ;
+    rdfs:domain os:Execution ;
+    rdfs:range os:Outcome .
+
+os:records a owl:ObjectProperty ;
+    rdfs:domain os:AuditRecord ;
+    rdfs:range os:Execution .
+
+os:referencesEvidence a owl:ObjectProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range os:Evidence .
+
+os:referencesPolicyDecision a owl:ObjectProperty ;
+    rdfs:domain os:Execution ;
+    rdfs:range os:PolicyDecision .
+
+os:referencesApproval a owl:ObjectProperty ;
+    rdfs:domain os:Execution ;
+    rdfs:range os:Approval .
+
+os:proposedAction a owl:ObjectProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range os:Action ;
+    rdfs:comment "Links a proposal to the concrete action being proposed." .
+
+os:forProposal a owl:ObjectProperty ;
+    rdfs:domain os:Approval ;
+    rdfs:range os:ActionProposal ;
+    rdfs:comment "Links an approval request or decision to the proposal it concerns." .
+
+os:forAction a owl:ObjectProperty ;
+    rdfs:domain os:Execution ;
+    rdfs:range os:Action ;
+    rdfs:comment "Links an execution attempt to the specific action being executed." .
+
+os:forProposalExecution a owl:ObjectProperty ;
+    rdfs:domain os:Execution ;
+    rdfs:range os:ActionProposal ;
+    rdfs:comment "Links an execution to the proposal whose payload is being executed." .
+
+os:outcomeOf a owl:ObjectProperty ;
+    rdfs:domain os:Outcome ;
+    rdfs:range os:Execution ;
+    rdfs:comment "Inverse-style convenience link from an outcome to its execution." .
+
+os:referencesProposal a owl:ObjectProperty ;
+    rdfs:domain os:AuditRecord ;
+    rdfs:range os:ActionProposal .
+
+os:referencesExecution a owl:ObjectProperty ;
+    rdfs:domain os:AuditRecord ;
+    rdfs:range os:Execution .
+
+os:referencesOutcome a owl:ObjectProperty ;
+    rdfs:domain os:AuditRecord ;
+    rdfs:range os:Outcome .
+
+os:approvedPayloadHash a owl:DatatypeProperty ;
+    rdfs:domain os:Approval ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Payload hash bound to the approval decision." .
+
+os:executionStatus a owl:DatatypeProperty ;
+    rdfs:domain os:Execution ;
+    rdfs:range xsd:string .
+
+os:outcomeStatus a owl:DatatypeProperty ;
+    rdfs:domain os:Outcome ;
+    rdfs:range xsd:string .
+
+os:eventType a owl:DatatypeProperty ;
+    rdfs:domain os:AuditRecord ;
+    rdfs:range xsd:string .
+
+os:description a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+os:actionType a owl:DatatypeProperty ;
+    rdfs:domain os:Action ;
+    rdfs:range xsd:string .
+
+os:operationClass a owl:DatatypeProperty ;
+    rdfs:domain os:Action ;
+    rdfs:range xsd:string .
+
+os:riskLevel a owl:DatatypeProperty ;
+    rdfs:domain os:Action ;
+    rdfs:range xsd:string .
+
+os:payloadHash a owl:DatatypeProperty ;
+    rdfs:domain os:ActionProposal ;
+    rdfs:range xsd:string .
+
+os:approvalStatus a owl:DatatypeProperty ;
+    rdfs:domain os:Approval ;
+    rdfs:range xsd:string .
+
+os:decisionType a owl:DatatypeProperty ;
+    rdfs:domain os:PolicyDecision ;
+    rdfs:range xsd:string .
+
+os:timestamp a owl:DatatypeProperty ;
+    rdfs:range xsd:dateTime .
+
+os:externalReference a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+os:containsRestrictedData a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean .

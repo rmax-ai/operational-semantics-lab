@@ -1,0 +1,243 @@
+@prefix os: <http://rmax.ai/ontology/operational-semantics/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+os:ActionProposalShape a sh:NodeShape ;
+    sh:targetClass os:ActionProposal ;
+    sh:property [
+        sh:path os:targets ;
+        sh:class os:SaaSResource ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:supportedBy ;
+        sh:class os:Evidence ;
+        sh:minCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:payloadHash ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 64 ;
+        sh:maxLength 64 ;
+    ] ;
+    sh:property [
+        sh:path os:proposedAction ;
+        sh:class os:Action ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path ( os:proposedAction os:performedVia ) ;
+        sh:class os:Tool ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path ( os:proposedAction os:operationClass ) ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path ( os:proposedAction os:riskLevel ) ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( "low" "medium" "high" "critical" ) ;
+    ] .
+
+os:WriteActionShape a sh:NodeShape ;
+    sh:targetClass os:WriteAction ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Write actions must be proposed through a proposal with operationClass propose_write before execution." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              FILTER NOT EXISTS {
+                ?proposal os:proposedAction $this ;
+                          os:payloadHash ?payloadHash .
+                $this os:operationClass "propose_write" .
+              }
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Write actions must have supporting evidence on their proposal." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              FILTER NOT EXISTS {
+                ?proposal os:proposedAction $this ;
+                          os:supportedBy ?evidence .
+              }
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Write actions must target a SaaS resource on their proposal." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              FILTER NOT EXISTS {
+                ?proposal os:proposedAction $this ;
+                          os:targets ?target .
+                ?target a os:SaaSResource .
+              }
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "A write action cannot be executed without an associated policy decision on its proposal." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              ?execution a os:Execution ;
+                         os:forAction $this .
+              FILTER NOT EXISTS {
+                ?execution os:referencesPolicyDecision ?decision .
+                ?proposal os:proposedAction $this ;
+                          os:hasPolicyDecision ?decision .
+              }
+            }
+        """ ;
+    ] .
+
+os:ApprovalShape a sh:NodeShape ;
+    sh:targetClass os:Approval ;
+    sh:property [
+        sh:path os:forProposal ;
+        sh:class os:ActionProposal ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:approvalStatus ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Granted approvals must reference a human actor and an approved payload hash." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this os:approvalStatus "granted" .
+              FILTER (
+                NOT EXISTS { $this os:grantedBy ?actor . ?actor a os:HumanActor . }
+                || NOT EXISTS { $this os:approvedPayloadHash ?hash . }
+              )
+            }
+        """ ;
+    ] .
+
+os:ExecutionShape a sh:NodeShape ;
+    sh:targetClass os:Execution ;
+    sh:property [
+        sh:path os:forAction ;
+        sh:class os:Action ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:referencesPolicyDecision ;
+        sh:class os:PolicyDecision ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:executionStatus ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Executions whose policy decision requires approval must reference a valid approval." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this os:referencesPolicyDecision ?decision .
+              ?decision os:decisionType "approval_required" .
+              FILTER NOT EXISTS {
+                $this os:referencesApproval ?approval .
+                ?approval os:approvalStatus "granted" ;
+                          os:authorizes $this .
+              }
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Only successful executions may produce an outcome." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this os:produces ?outcome .
+              FILTER NOT EXISTS { $this os:executionStatus "succeeded" . }
+            }
+        """ ;
+    ] .
+
+os:AuditRecordShape a sh:NodeShape ;
+    sh:targetClass os:AuditRecord ;
+    sh:property [
+        sh:path os:referencesProposal ;
+        sh:class os:ActionProposal ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:referencesExecution ;
+        sh:class os:Execution ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:referencesOutcome ;
+        sh:class os:Outcome ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path os:records ;
+        sh:class os:Execution ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Audit records must reference supporting evidence and the policy decision through the referenced proposal and execution." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this os:referencesProposal ?proposal ;
+                    os:referencesExecution ?execution .
+              FILTER (
+                NOT EXISTS { ?proposal os:supportedBy ?evidence . }
+                || NOT EXISTS { ?execution os:referencesPolicyDecision ?decision . }
+              )
+            }
+        """ ;
+    ] ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "Audit records for approval-required executions must include an approval reference on the execution." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this os:referencesExecution ?execution .
+              ?execution os:referencesPolicyDecision ?decision .
+              ?decision os:decisionType "approval_required" .
+              FILTER NOT EXISTS { ?execution os:referencesApproval ?approval . }
+            }
+        """ ;
+    ] .
