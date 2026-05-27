@@ -1,9 +1,11 @@
 """Persistence layer for the operational semantics lab."""
 
 from operational_semantics.persistence.database import (
-    DatabaseEngine,
+    Base,
     get_engine,
     get_session,
+    init_db,
+    teardown_db,
 )
 from operational_semantics.persistence.tables import (
     ApprovalTable,
@@ -27,9 +29,11 @@ from operational_semantics.persistence.repositories import (
 )
 
 __all__ = [
-    "DatabaseEngine",
+    "Base",
     "get_engine",
     "get_session",
+    "init_db",
+    "teardown_db",
     "ProposalTable",
     "EvidenceTable",
     "PolicyDecisionTable",
