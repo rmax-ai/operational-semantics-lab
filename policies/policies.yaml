@@ -1,0 +1,11 @@
+# Operational Semantics Lab — Policy Definitions
+# Base policy configuration. System-specific policies extend or override these.
+
+system: base
+version: "1.0"
+rules:
+  - operation: read
+    decision: permitted
+
+  - operation: propose_write
+    decision: permitted

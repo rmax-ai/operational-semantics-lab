@@ -1,0 +1,38 @@
+# Slack message policy
+system: slack
+version: "1.0"
+rules:
+  - operation: read
+    decision: permitted
+
+  - operation: propose_write
+    decision: permitted
+
+  - operation: execute_write
+    target_scope: company_wide
+    when:
+      contains_restricted_data: true
+    decision: prohibited
+    remediation:
+      - Redact restricted identifiers from message
+      - Resubmit proposal with redacted content
+
+  - operation: execute_write
+    target_scope: company_wide
+    when:
+      contains_restricted_data: false
+    decision: approval_required
+    approver_role: incident_commander
+
+  - operation: execute_write
+    target_scope: private_team
+    when:
+      contains_restricted_data: false
+    decision: permitted
+
+  - operation: execute_write
+    target_scope: private_team
+    when:
+      contains_restricted_data: true
+    decision: approval_required
+    approver_role: incident_commander

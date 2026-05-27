@@ -1,0 +1,35 @@
+# CRM case status update policy
+system: crm
+version: "1.0"
+rules:
+  - operation: read
+    decision: permitted
+
+  - operation: propose_write
+    action_type: change_case_status
+    decision: permitted
+
+  - operation: execute_write
+    action_type: change_case_status
+    when:
+      target_status: resolved
+      minimum_evidence_count: 2
+    decision: approval_required
+    approver_role: case_owner
+
+  - operation: execute_write
+    action_type: change_case_status
+    when:
+      target_status: resolved
+      evidence_count_less_than: 2
+    decision: prohibited
+    remediation:
+      - Attach additional evidence before resolving
+      - Obtain confirmation from case owner
+
+  - operation: execute_write
+    action_type: change_case_status
+    when:
+      target_status: in_progress
+    decision: approval_required
+    approver_role: case_owner

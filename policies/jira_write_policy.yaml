@@ -1,0 +1,26 @@
+# Jira write policy
+system: jira
+version: "1.0"
+rules:
+  - operation: read
+    decision: permitted
+
+  - operation: propose_write
+    action_type: create_issue
+    decision: permitted
+
+  - operation: execute_write
+    action_type: create_issue
+    when:
+      contains_restricted_data: false
+    decision: approval_required
+    approver_role: applications_maintainer
+
+  - operation: execute_write
+    action_type: create_issue
+    when:
+      contains_restricted_data: true
+    decision: prohibited
+    remediation:
+      - Remove restricted identifiers from payload
+      - Resubmit proposal without sensitive data
